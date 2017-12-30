@@ -8,8 +8,9 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class ToDoListViewController: UITableViewController {
+class ToDoListViewController: SwipeTableViewController {
 
     var toDoItems : Results<Item>?
     // core data
@@ -28,6 +29,7 @@ class ToDoListViewController: UITableViewController {
         super.viewDidLoad()
         
         loadItems()
+        tableView.separatorStyle = .none
     }
 
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
@@ -35,10 +37,16 @@ class ToDoListViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "ToDoItemCell", for: indexPath)
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        
         if let item = toDoItems?[indexPath.row] {
             cell.textLabel?.text = item.title
+            // cell.backgroundColor = UIColor(hexString: categoryArray?[indexPath.row].bgColor ?? "1D9BF6")
             
+            if let color = UIColor(hexString: selectedCategory!.bgColor)?.darken(byPercentage: CGFloat(indexPath.row) / CGFloat(toDoItems!.count)) {
+                cell.backgroundColor = color
+                cell.textLabel?.textColor = ContrastColorOf(color, returnFlat: true)
+            }
             cell.accessoryType = item.checked ? .checkmark : .none
         } else {
             cell.textLabel?.text = "No Items Added"
@@ -46,7 +54,20 @@ class ToDoListViewController: UITableViewController {
         
         return cell
     }
+    //MARK - Delete
     
+    override func updateModel(at indexPath: IndexPath) {
+        if let itemToDelete = self.toDoItems?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    //to delete in realm
+                    self.realm.delete(itemToDelete)
+                }
+            } catch {
+                print("Error deleting \(error)")
+            }
+        }
+    }
     //MARK - TableView Delegates Methods
     
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -102,7 +123,7 @@ class ToDoListViewController: UITableViewController {
     
     func loadItems() {
         
-        toDoItems = selectedCategory?.items.sorted(byKeyPath: "title", ascending: true)
+        toDoItems = selectedCategory?.items.sorted(byKeyPath: "dateCreated", ascending: true)
         
         tableView.reloadData()
     }

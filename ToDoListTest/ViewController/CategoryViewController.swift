@@ -8,8 +8,9 @@
 
 import UIKit
 import RealmSwift
+import ChameleonFramework
 
-class CategoryViewController: UITableViewController {
+class CategoryViewController: SwipeTableViewController{
 
     let realm = try! Realm()
     var categoryArray : Results<Category>?
@@ -17,6 +18,7 @@ class CategoryViewController: UITableViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         loadCategory()
+        tableView.separatorStyle = .none
     }
     
     //Mark - TableView Datasoucre Methods
@@ -25,9 +27,11 @@ class CategoryViewController: UITableViewController {
     }
     
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
-        let cell = tableView.dequeueReusableCell(withIdentifier: "CategoryCell", for: indexPath)
-        let item = categoryArray?[indexPath.row].name ?? "No Category Added Yet"
-        cell.textLabel?.text = item
+        
+        let cell = super.tableView(tableView, cellForRowAt: indexPath)
+        cell.textLabel?.text = categoryArray?[indexPath.row].name ?? "No Categories"
+        
+        cell.backgroundColor = UIColor(hexString: categoryArray?[indexPath.row].bgColor ?? "1D9BF6")
         
         return cell
     }
@@ -50,6 +54,22 @@ class CategoryViewController: UITableViewController {
         
         tableView.reloadData()
     }
+    
+    //MARK - Delete data from swipe
+    
+    override func updateModel(at indexPath: IndexPath) {
+        if let category = self.categoryArray?[indexPath.row] {
+            do {
+                try self.realm.write {
+                    //to delete in realm
+                    self.realm.delete(category)
+                }
+            } catch {
+                print("Error deleting \(error)")
+            }
+        }
+    }
+    
     //MARK - Add New Categories
     
     @IBAction func addButton(_ sender: UIBarButtonItem) {
@@ -62,7 +82,7 @@ class CategoryViewController: UITableViewController {
             //            let context = (UIApplication.shared.delegate as! AppDelegate).persistentContainer.viewContext
             let newCategory = Category()
             newCategory.name = textField.text!
-            
+            newCategory.bgColor = UIColor.randomFlat.hexValue()
             self.save(category: newCategory)
         }
         alert.addTextField { (alertTextField) in
@@ -89,3 +109,4 @@ class CategoryViewController: UITableViewController {
         tableView.deselectRow(at: indexPath, animated: true)
     }
 }
+

@@ -13,7 +13,6 @@ class Item: Object {
     @objc dynamic var title : String = ""
     @objc dynamic var checked : Bool = false
     @objc dynamic var dateCreated : Date?
-    
     //creating relation in realm : inverse relationship
     
     var parentCategory = LinkingObjects(fromType: Category.self, property: "items")
